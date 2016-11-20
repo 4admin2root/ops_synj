@@ -1,0 +1,105 @@
+---
+- name: Change CentOS-Base.repo
+  template: src=CentOS-Base.repo dest=/etc/yum.repos.d/CentOS-Base.repo owner=root group=root mode=0644
+
+- name: Change epel.repo
+  template: src=epel.repo dest=/etc/yum.repos.d/epel.repo owner=root group=root mode=0644
+
+- name: Clean all yum
+  shell: yum clean all
+
+- name: remove ntpd
+  yum: name={{item}} state=absent
+  with_items:
+        - ntp
+        - ntpdate
+        - postfix 
+        - mariadb-libs
+
+- name: Install Base pkg
+  yum: name={{item}} state=present
+  with_items:
+        - wget
+        - net-tools
+        - sysstat
+        - vim-enhanced
+        - chrony
+        - telnet
+        - mlocate
+        - strace
+        - traceroute
+
+- name: http_proxy
+  file: path=/etc/profile.d/proxy.sh state=absent
+
+
+- name: Chrony time
+  shell: rm -f /etc/chrony.conf
+
+- name: Copy conf
+  template: src=chrony.conf dest=/etc/chrony.conf owner=root group=root mode=0644
+  when: ansible_os_family == "RedHat"
+  notify: restart chronyd
+
+
+- name: Change limit.conf
+  template: src=limits.conf dest=/etc/security/limits.conf owner=root group=root mode=0644
+
+- name: Copy tsar
+  copy: src=tsar.tar.gz dest=/root/ owner=root group=root
+
+- name: unzip tsar
+  shell: tar zxvf /root/tsar.tar.gz -C /root/
+
+- name: install tsar
+  shell: cd /root/tsar/&&make&&make install
+        
+- name: Delete tsar
+  shell: rm -rf /root/tsar*
+#
+- name: update dns reslove.conf
+  copy: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=0644 force=yes
+#
+##- name: copy zabbix_agent
+##  copy: src=zabbix-agent-3.0.3-1.el7.x86_64.rpm dest=/root/zabbix-agent-3.0.3-1.el7.x86_64.rpm owner=root group=root
+##
+##- name: Install zabbix-agent 
+##  shell: rpm -ivh /root/zabbix-agent-3.0.3-1.el7.x86_64.rpm
+##
+##- name: rm zabbix.rpm
+##  shell: rm -f /root/zabbix-agent-3.0.3-1.el7.x86_64.rpm
+##
+##- name: rm zabbix_agentd_default.conf
+##  shell: rm -f /etc/zabbix/zabbix_agentd.conf
+##
+##- name: Copy zabbix_agentd.conf
+##  template: src=zabbix_agentd.conf dest=/etc/zabbix/zabbix_agentd.conf owner=root group=root mode=0664
+##  notify: start zabbix-agent
+##
+- name: add hosts
+  shell: echo -e "10.8.32.30  zbx01.synjones.com\n10.8.32.31  log01.synjones.com" >>/etc/hosts
+
+- name: remove postfix
+  shell: yum remove -y postfix mariadb-libs
+
+- name: change timzone
+  shell: timedatectl set-local-rtc 1&&timedatectl set-timezone Asia/Shanghai
+
+- name: change ssh config
+  shell: sed -i 's/#UseDNS yes/UseDNS no/g' /etc/ssh/sshd_config&&sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+  notify: restart sshd
+
+- name: disabled selinux 
+  shell: sed -i 's/SELINUX=disable/SELINUX=disabled/g' /etc/selinux/config&&sed -i 's/SELINUXTYPE=targeted/#SELINUXTYPE=targeted/g' /etc/selinux/config
+  
+- name: change rsyslog server
+  shell: sed -i 's/10\.8\.32\.30/10\.9\.100\.4/' /etc/rsyslog.conf
+  tags: test
+  notify: restart rsyslog
+
+- name: add hostname to /etc/hosts
+  shell: echo `ip -o a |grep eth0 |head -n 1 |awk -F '[ \/]' '{print $7}'` `hostname` >> /etc/hosts
+  tags: foo
+
+- name: reboot
+  shell: shutdown -r 1

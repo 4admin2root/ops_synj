@@ -1,0 +1,126 @@
+---
+- name: create user xzx
+  user: name=xzx generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa
+
+- name: add authorized_keys
+  shell: echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDa3+Y72wBTvM8JtflobxDVBYaX0CiMMt3smR1dUHBxKJmj8FvRbwggshUqG14zAadb2KmyT+YjJNI8EVbASoKLpojEEl28vZVxbJ1RVw5w1c4T5sw8iAAPt+Bxrl3RpOUI5nLf6pkO2aCkvSsbeLQcKYDF7kRyNE0W3Ajq3t9bvVSR3rBeQYHFTZtLqi19LJCxSwpPwzyC9v1D4GlVIglqKBHgaChLbYMz9E1AbxoacnYQRUEz5e5TO/rerIwmp3zXuyqz4aLPYuJTdVwTw8nDaQHAmLJHXgK+obqpeIXYfHgd1gUI9D0xFTTejeoHXH6QSeOkaZR9Qz3VmVDNYPhz xzx@solution02-monitor2.novalocal >> /home/xzx/.ssh/authorized_keys && chown xzx:xzx /home/xzx/.ssh/authorized_keys && chmod 600 /home/xzx/.ssh/authorized_keys
+        #authorized_key: user=xzx key=""
+- name: change sudoer
+  shell: sed -i '/root\s*ALL=(ALL)\s*ALL/a xzx ALL=(ALL) NOPASSWD:ALL' /etc/sudoers
+
+- name: Change CentOS-Base.repo
+  template: src=CentOS-Base.repo dest=/etc/yum.repos.d/CentOS-Base.repo owner=root group=root mode=0644
+
+- name: Change epel.repo
+  template: src=epel.repo dest=/etc/yum.repos.d/epel.repo owner=root group=root mode=0644
+
+- name: Clean all yum
+  shell: yum clean all
+
+- name: remove ntpd
+  yum: name={{item}} state=absent
+  with_items:
+        - ntp
+        - ntpdate
+        - postfix 
+        - mariadb-libs
+        - NetworkManager
+
+- name: Install Base pkg
+  yum: name={{item}} state=present
+  with_items:
+        - wget
+        - net-tools
+        - sysstat
+        - vim-enhanced
+        - chrony
+        - telnet
+        - mlocate
+        - strace
+        - traceroute
+        - vim
+        - lrzsz
+        - screen
+        - tmux
+        - bash-completion
+
+
+- name: install powerpath
+  shell: rpm -ivh http://10.8.32.30/pkg/EMCPower.LINUX-6.1.0.00.00-091.RHEL7.x86_64.rpm && systemctl disable multipathd
+  ignore_errors: True
+
+- name: Chrony time
+  shell: rm -f /etc/chrony.conf
+
+- name: Copy conf
+  template: src=chrony.conf dest=/etc/chrony.conf owner=root group=root mode=0644
+  when: ansible_os_family == "RedHat"
+  notify: restart chronyd
+
+
+- name: Change limit.conf
+  template: src=limits.conf dest=/etc/security/limits.conf owner=root group=root mode=0644
+
+- name: Copy tsar
+  copy: src=tsar.tar.gz dest=/root/ owner=root group=root
+
+- name: unzip tsar
+  shell: tar zxvf /root/tsar.tar.gz -C /root/
+
+- name: install tsar
+  shell: cd /root/tsar/&&make&&make install
+        
+- name: Delete tsar
+  shell: rm -rf /root/tsar*
+
+- name: update ifcfg
+  shell: echo -e 'DNS1=10.9.5.40\nDNS2=10.9.5.41\nDOMAIN=synjones.com' >> /etc/sysconfig/network-scripts/ifcfg-`ip -o a |grep '10\.9\.100\.' |awk '{print $2}'`
+
+- name: update dns reslove.conf
+  copy: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=0644 force=yes
+
+- name: install zabbix_agent
+  yum: name=http://10.8.32.30/pkg/zabbix-agent-3.0.3-1.el7.x86_64.rpm state=present
+
+- name: rm zabbix_agentd_default.conf
+  shell: rm -f /etc/zabbix/zabbix_agentd.conf
+
+- name: Copy zabbix_agentd.conf
+  template: src=zabbix_agentd.conf dest=/etc/zabbix/zabbix_agentd.conf owner=root group=root mode=0664
+  notify: start zabbix-agent
+
+- name: add hosts
+  shell: echo -e "10.8.32.30  zbx01.synjones.com\n10.8.32.31  log01.synjones.com" >>/etc/hosts
+
+
+- name: change timzone
+  shell: timedatectl set-local-rtc 1&&timedatectl set-timezone Asia/Shanghai
+
+- name: change ssh config
+  shell: sed -i 's/#UseDNS yes/UseDNS no/g' /etc/ssh/sshd_config&&sed -i 's/GSSAPIAuthentication yes/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+  notify: restart sshd
+
+- name: disabled selinux 
+  shell: sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config&&sed -i 's/SELINUXTYPE=targeted/#SELINUXTYPE=targeted/g' /etc/selinux/config
+  ignore_errors: True
+  
+- name:  change banner
+  copy: src=sshd_banner dest=/etc/ssh/sshd_banner
+  ignore_errors: True
+
+- name:  change banner conf
+  shell: echo Banner /etc/ssh/sshd_banner >> /etc/ssh/sshd_config
+  ignore_errors: True
+
+- name:  change rsyslog conf
+  shell: echo "*.warn;mail.none;authpriv.none;cron.none @@10.9.100.4:1514" >> /etc/rsyslog.conf
+  tags: test
+  ignore_errors: True
+  notify: restart rsyslog
+
+- name: add hostname to /etc/hosts
+  shell: echo `ip -o a |egrep bond1\.300 |head -n 1 |awk -F '[ \/]' '{print $7}'` `hostname` >> /etc/hosts
+  tags: foo
+
+- name: reboot
+  shell: shutdown -r  1

@@ -1,0 +1,37 @@
+---
+- name: check audit package
+  yum: name=audit state=present
+
+- name: check audispd-plugins package
+  yum: name=audispd-plugins state=present
+
+# 开启审计
+- name: copy au-remote.conf
+  template: src=au-remote.conf dest=/etc/audisp/plugins.d/au-remote.conf owner=root group=root mode=0640
+
+- name: copy audisp-remote.conf
+  template: src=audisp-remote.conf dest=/etc/audisp/audisp-remote.conf owner=root group=root mode=0640
+
+- name: check auditd.conf
+  template: src=auditd.conf dest=/etc/audit/auditd.conf owner=root group=root mode=0640
+  notify: restart auditd
+# 密码策略和复杂度
+- name: change PASS_MAX_DAYS 
+  template: src=login.defs dest=/etc/login.defs owner=root group=root mode=0644
+
+- name: change pwquality.conf 
+  template: src=pwquality.conf dest=/etc/security/pwquality.conf owner=root group=root mode=0644
+# 修改root用户密码有效期为90天，待定
+- name: change  root password expires 
+  shell: chage -M 90 root
+# xzx用户使用key方式，不使用密码
+# 计划创建cloud_user用户
+- name: check  xzx with password or not
+  shell: echo
+
+- name: check other users
+  shell: /etc/shadow
+  register: ps
+- name: print warning
+  debug: msg={{ ps.stdout }}
+  debug: var=ps
