@@ -1,7 +1,12 @@
 ---
+#########################################################################
+# tested on centos 7
+# 2016-11-19
+########################################################################
+#检查并进行安全更新
 - name: check and update security packages
   shell: yum check-update --security;yum update --security
-
+#检查audit软件包
 - name: check audit package
   yum: name=audit state=present
 
@@ -16,7 +21,7 @@
   template: src=audisp-remote.conf dest=/etc/audisp/audisp-remote.conf owner=root group=root mode=0640
 
 - name: copy audit.rules
-  copy: src=audit.rules dest=/etc/audit/rules.d/audit.rules group=root mode=0640
+  copy: src=audit.rules dest=/etc/audit/rules.d/audit.rules owner=root group=root mode=0640
 
 - name: copy auditd.conf
   template: src=auditd.conf dest=/etc/audit/auditd.conf owner=root group=root mode=0640
@@ -27,28 +32,76 @@
 
 - name: change pwquality.conf 
   template: src=pwquality.conf dest=/etc/security/pwquality.conf owner=root group=root mode=0644
-# 修改root用户密码有效期为90天，待定
+# 账户锁定，root除外
+#  pam_faillock 锁定登录失败用户,待测试===========================
+- name: set account policy:system-auth
+  copy: src=system-auth  dest=/etc/pam.d/system-auth owner=root group=root mode=0640
+- name: set account policy:password-auth
+  copy: src=password-auth  dest=/etc/pam.d/password-auth owner=root group=root mode=0640
+# 修改root用户密码有效期为90天，禁止rootssh登录，密码修改由堡垒机触发,待定==========================
 - name: change  root password expires 
   shell: chage -M 90 root
-# xzx用户使用key方式，不使用密码
-# 计划创建cloud_user用户
-#  pam_faillock 锁定登录失败用户
+
 # 限制用户root使用ssh
+#- name: change ssh config :PermitRootLogin no
+#  shell: echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+
+# 清除xzx用户密码 
+- name: check  user xzx with password and then delete password
+  shell: bash -c "[ `awk -F ':' '{print $1,$2}' /etc/shadow |grep xzx |wc -L` -gt 80 ] && passwd -d xzx"
+  when: ansible_os_family == "RedHat" #and ansible_distribution_major_version|int == 7
+  ignore_errors: true
+# 检查可登陆用户
+- name: check users which can login
+  shell: grep -v nologin /etc/passwd |egrep '/bin/bash|/bin/sh|/bin/ksh' |awk -F ':' '{print $1}'
+  register: users
+  tags: users
+
+- name: append result log
+  shell: echo -e '<p style="color:red">users(can login with shell):\n {{users.stdout}}' >> /tmp/`hostname`_`date +%Y%m%d`.log
+  tags: users
+
+- name: print users above
+  debug: var=users.stdout
+  tags: users
 # 检查监听端口，关闭不必要服务,cups,sendmail,postfix
+- name: disable cups,sendmail,postfix
+  service: name={{item}} state=stopped enabled=no
+  with_items:
+        - cups
+        - sendmail
+        - postfix
+  ignore_errors: true
+# 打印监听端口
+- name: list listening ports
+  shell: netstat -ntpl >> /tmp/`hostname`_`date +%Y%m%d`.log
 # firewall
+#- name: firewall
+#  firewalld: port=22/tcp permanent=true state=enabled
+#
 # file md5check
-# openscap-utils;scap-security-guide
-# oscap oval eval --results scan-oval-results.xml /usr/share/xml/scap/ssg/content/ssg-centos7-ds.xml
-# oscap oval generate report scan-oval-results.xml > ssg-scan-oval-report.html
-- name: check  xzx with password or not
-  shell: echo test
+#
+# do openscap check
+- name: openscap
+  yum: name={{item}}  state=present
+  with_items:
+        - openscap-utils
+        - scap-security-guide
+  tags: oscap
 
-- name: create cloud_user
-  user: name=cloud_user generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa uid=1002
+- name: run openscap1
+  shell: oscap oval eval --results /tmp/scan-oval-results.xml /usr/share/xml/scap/ssg/content/ssg-{{ansible_distribution|lower}}{{ansible_distribution_major_version}}-ds.xml
+  #when: ansible_os_family == "RedHat" #and ansible_distribution_major_version|int == 7
+  tags: oscap
 
-- name: check other users
-  shell: ls /etc/shadow
-  register: ps
+- name: run openscap2
+  shell: oscap oval generate report /tmp/scan-oval-results.xml > /tmp/`hostname`_`date +%Y%m%d`.html
+  tags: oscap
 
-- name: print warning
-  debug: var=ps
+- name: append log above
+  shell: cat /tmp/`hostname`_`date +%Y%m%d`.log |sed 's/$/<br>/' >> /tmp/`hostname`_`date +%Y%m%d`.html;echo "</p>" >> /tmp/`hostname`_`date +%Y%m%d`.html
+  tags: oscap
+
+- name: upload result file to file server
+  shell: F=`hostname`_`date +%Y%m%d`.html;curl  -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
+  tags: oscap
