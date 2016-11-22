@@ -1,0 +1,15 @@
+cluster.name: {{cluster_name}}
+node.name: {{ansible_hostname}}.{{ansible_domain}}
+node.rack: r8
+
+network.host: {% for item in ansible_all_ipv4_addresses if item[:4] == '10.9' %}
+ {{item}} 
+{% endfor %}
+http.port: 9200
+discovery.zen.ping.unicast.hosts: {{discovery_zen_ping_unicast_hosts}}
+discovery.zen.minimum_master_nodes: 1
+
+node.master: true
+node.data: true
+http.cors.enabled: true
+http.cors.allow-origin: "*"

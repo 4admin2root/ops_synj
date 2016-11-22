@@ -1,0 +1,28 @@
+---
+- name: install jdk 7u80 
+  yum: name=http://10.8.32.30:8080/pkg/jdk-7u80-linux-x64.rpm state=present
+
+- name: create elastic repo
+  copy: src=elastic.repo dest=/etc/yum.repos.d/elastic.repo owner=root group=root mode=0644 
+
+- name: install elasticsearch
+  yum: name=elasticsearch-2.4.0 state=present
+  tags: es
+
+- name: install logstash
+  yum: name=logstash-2.3.4 state=present
+  tags: ls
+
+- name: install kibana
+  yum: name=kibana-4.5.4 state=present
+  tags: kbn
+
+- name: change  elasticsearch.yml
+  template: src=elasticsearch.yml dest=/etc/elasticsearch/elasticsearch.yml owner=root group=elasticsearch mode=0750
+  notify: restart elasticsearch
+  tags: es
+
+- name: change  elasticsearch autostart
+  service: name=elasticsearch enabled=yes
+  tags: es
+
