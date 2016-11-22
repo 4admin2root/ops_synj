@@ -1,4 +1,7 @@
 ---
+- name: check and update security packages
+  shell: yum check-update --security;yum update --security
+
 - name: check audit package
   yum: name=audit state=present
 
@@ -12,11 +15,14 @@
 - name: copy audisp-remote.conf
   template: src=audisp-remote.conf dest=/etc/audisp/audisp-remote.conf owner=root group=root mode=0640
 
-- name: check auditd.conf
+- name: copy audit.rules
+  copy: src=audit.rules dest=/etc/audit/rules.d/audit.rules group=root mode=0640
+
+- name: copy auditd.conf
   template: src=auditd.conf dest=/etc/audit/auditd.conf owner=root group=root mode=0640
   notify: restart auditd
-# 密码策略和复杂度
-- name: change PASS_MAX_DAYS 
+# 密码策略
+- name: overwrite login.defs
   template: src=login.defs dest=/etc/login.defs owner=root group=root mode=0644
 
 - name: change pwquality.conf 
@@ -26,12 +32,23 @@
   shell: chage -M 90 root
 # xzx用户使用key方式，不使用密码
 # 计划创建cloud_user用户
+#  pam_faillock 锁定登录失败用户
+# 限制用户root使用ssh
+# 检查监听端口，关闭不必要服务,cups,sendmail,postfix
+# firewall
+# file md5check
+# openscap-utils;scap-security-guide
+# oscap oval eval --results scan-oval-results.xml /usr/share/xml/scap/ssg/content/ssg-centos7-ds.xml
+# oscap oval generate report scan-oval-results.xml > ssg-scan-oval-report.html
 - name: check  xzx with password or not
-  shell: echo
+  shell: echo test
+
+- name: create cloud_user
+  user: name=cloud_user generate_ssh_key=yes ssh_key_bits=2048 ssh_key_file=.ssh/id_rsa uid=1002
 
 - name: check other users
-  shell: /etc/shadow
+  shell: ls /etc/shadow
   register: ps
+
 - name: print warning
-  debug: msg={{ ps.stdout }}
   debug: var=ps
