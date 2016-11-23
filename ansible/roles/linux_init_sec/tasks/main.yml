@@ -79,8 +79,49 @@
 #- name: firewall
 #  firewalld: port=22/tcp permanent=true state=enabled
 #
-# file md5check
-#
+# something important:
+# 1.chkrootkit,rkhunter
+# 2.file hash value check: aide,tripwire
+# do aide check
+- name: install aide
+  yum: name=aide state=present
+  tags: aide
+
+- name: copy aide conf
+  template: src=aide.conf dest=/etc/aide.conf owner=root group=root mode=0600
+  tags: aide
+
+- name: init aide
+  shell: aide -i;mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+  tags: aide
+  ignore_errors: true
+
+- name: create aide dir
+  file: path=/usr/local/aide state=directory mode=0755
+  tags: aide
+
+- name: copy aide script 
+  copy: src=aide.sh dest=/usr/local/aide/aide.sh owner=root group=root mode=0700
+  tags: aide
+
+- name: cron aide
+  cron: name="aide" minute="0" hour="5" job="/usr/local/aide/aide.sh"
+  tags: aide
+  #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
+
+# do lynis check
+- name: install  lynis
+  yum: name={{item}} state=present
+  with_items:
+        - lynis-2.3.2
+        - yum-utils
+        - arpwatch
+  tags: lynis
+
+- name : run lynis
+  shell: lynis audit system -Q
+  tags: lynis
+
 # do openscap check
 - name: openscap
   yum: name={{item}}  state=present
@@ -102,6 +143,12 @@
   shell: cat /tmp/`hostname`_`date +%Y%m%d`.log |sed 's/$/<br>/' >> /tmp/`hostname`_`date +%Y%m%d`.html;echo "</p>" >> /tmp/`hostname`_`date +%Y%m%d`.html
   tags: oscap
 
+- name: append lynis log
+  shell: egrep 'Warning|Suggestion' /var/log/lynis.log >> /tmp/`hostname`_`date +%Y%m%d`.html
+  tags: lynis
+  ignore_errors: true
+
 - name: upload result file to file server
   shell: F=`hostname`_`date +%Y%m%d`.html;curl  -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
   tags: oscap
+  ignore_errors: true
