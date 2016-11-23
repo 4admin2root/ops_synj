@@ -14,6 +14,10 @@
 - name: Change epel.repo
   template: src=epel.repo dest=/etc/yum.repos.d/epel.repo owner=root group=root mode=0644
 
+- name: remove xCAT repo
+  shell: rm -f /etc/yum.repos.d/xCAT*
+  ignore_errors: true
+
 - name: Clean all yum
   shell: yum clean all
 
