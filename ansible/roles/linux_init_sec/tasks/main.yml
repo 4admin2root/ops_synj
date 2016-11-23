@@ -108,6 +108,46 @@
   cron: name="aide" minute="0" hour="5" job="/usr/local/aide/aide.sh"
   tags: aide
   #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
+# configure mailx
+- name: install mailx
+  yum: name=mailx state=present
+  tags: mailx
+
+- name: copy mailx cony
+  template: src=mail.rc dest=/etc/mail.rc owner=root group=root mode=0640
+  tags: mailx
+
+- name: create nss dir
+  file: path=/root/nss state=directory mode=0755
+  tags: mailx
+
+- name: copy db files 
+  copy: src={{item}} dest=/root/nss/ owner=root group=root mode=0700
+  with_items:
+        - key3.db
+        - cert8.db
+        - secmod.db
+  tags: mailx
+
+# do lynis check
+- name: install  lynis
+  yum: name={{item}} state=present
+  with_items:
+        - lynis-2.3.2
+        - yum-utils
+        - arpwatch
+  tags: lynis
+  tags: mailx
+
+# do lynis check
+- name: install  lynis
+  yum: name={{item}} state=present
+  with_items:
+        - lynis-2.3.2
+        - yum-utils
+        - arpwatch
+  tags: lynis
+  tags: mailx
 
 # do lynis check
 - name: install  lynis
