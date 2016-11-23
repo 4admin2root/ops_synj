@@ -78,36 +78,6 @@
 # firewall
 #- name: firewall
 #  firewalld: port=22/tcp permanent=true state=enabled
-#
-# something important:
-# 1.chkrootkit,rkhunter
-# 2.file hash value check: aide,tripwire
-# do aide check
-- name: install aide
-  yum: name=aide state=present
-  tags: aide
-
-- name: copy aide conf
-  template: src=aide.conf dest=/etc/aide.conf owner=root group=root mode=0600
-  tags: aide
-
-- name: init aide
-  shell: aide -i;mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-  tags: aide
-  ignore_errors: true
-
-- name: create aide dir
-  file: path=/usr/local/aide state=directory mode=0755
-  tags: aide
-
-- name: copy aide script 
-  copy: src=aide.sh dest=/usr/local/aide/aide.sh owner=root group=root mode=0700
-  tags: aide
-
-- name: cron aide
-  cron: name="aide" minute="0" hour="5" job="/usr/local/aide/aide.sh"
-  tags: aide
-  #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
 # configure mailx
 - name: install mailx
   yum: name=mailx state=present
@@ -173,3 +143,33 @@
   shell: F=`hostname`_`date +%Y%m%d`.html;curl  -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
   tags: oscap
   ignore_errors: true
+#
+# something important:
+# 1.chkrootkit,rkhunter
+# 2.file hash value check: aide,tripwire
+# do aide check
+- name: install aide
+  yum: name=aide state=present
+  tags: aide
+
+- name: copy aide conf
+  template: src=aide.conf dest=/etc/aide.conf owner=root group=root mode=0600
+  tags: aide
+
+- name: create aide dir
+  file: path=/usr/local/aide state=directory mode=0755
+  tags: aide
+
+- name: copy aide script 
+  copy: src=aide.sh dest=/usr/local/aide/aide.sh owner=root group=root mode=0700
+  tags: aide
+
+- name: cron aide
+  cron: name="aide" minute="0" hour="5" job="/usr/local/aide/aide.sh"
+  tags: aide
+  #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
+- name: init aide
+  shell: aide -i;mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+  tags: aide
+  ignore_errors: true
+
