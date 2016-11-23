@@ -129,25 +129,6 @@
         - secmod.db
   tags: mailx
 
-# do lynis check
-- name: install  lynis
-  yum: name={{item}} state=present
-  with_items:
-        - lynis-2.3.2
-        - yum-utils
-        - arpwatch
-  tags: lynis
-  tags: mailx
-
-# do lynis check
-- name: install  lynis
-  yum: name={{item}} state=present
-  with_items:
-        - lynis-2.3.2
-        - yum-utils
-        - arpwatch
-  tags: lynis
-  tags: mailx
 
 # do lynis check
 - name: install  lynis
