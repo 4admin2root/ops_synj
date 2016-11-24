@@ -21,14 +21,14 @@
 - name: Clean all yum
   shell: yum clean all
 
-- name: remove ntpd
+- name: remove packages
   yum: name={{item}} state=absent
   with_items:
         - ntp
         - ntpdate
         - postfix 
         - mariadb-libs
-        - NetworkManager
+#        - NetworkManager
 
 - name: Install Base pkg
   yum: name={{item}} state=present
