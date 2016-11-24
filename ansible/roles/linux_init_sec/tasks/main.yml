@@ -135,7 +135,7 @@
   tags: oscap
 
 - name: append lynis log
-  shell: egrep 'Warning|Suggestion' /var/log/lynis.log >> /tmp/`hostname`_`date +%Y%m%d`.html
+  shell: egrep 'Warning|Suggestion' /var/log/lynis.log | sed 's/$/<br>/' >> /tmp/`hostname`_`date +%Y%m%d`.html
   tags: lynis
   ignore_errors: true
 
