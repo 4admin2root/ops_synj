@@ -173,3 +173,11 @@
   tags: aide
   ignore_errors: true
 
+- name: upload result file to file server
+  shell: echo http://10.9.100.3/upload/init_sec/`hostname`_`date +%Y%m%d`.html
+  register: url
+  ignore_errors: true
+  tags: url
+- debug: msg="please browse the URL:{{url.stdout}} to get scan result"
+  ignore_errors: true
+  tags: url
