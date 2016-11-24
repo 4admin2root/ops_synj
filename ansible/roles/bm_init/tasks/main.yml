@@ -116,8 +116,8 @@
   shell: echo Banner /etc/ssh/sshd_banner >> /etc/ssh/sshd_config
   ignore_errors: True
 
-- name:  change rsyslog conf
-  shell: echo "*.warn;mail.none;authpriv.none;cron.none @@10.9.100.4:1514" >> /etc/rsyslog.conf
+- name:  copy rsyslog conf
+  copy: src=rsyslog.conf dest=/etc/rsyslog.conf owner=root group=root mode=0644 force=yes
   tags: test
   ignore_errors: True
   notify: restart rsyslog
