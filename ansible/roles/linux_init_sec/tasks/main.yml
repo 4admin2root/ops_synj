@@ -148,6 +148,11 @@
 # 1.chkrootkit,rkhunter
 # 2.file hash value check: aide,tripwire
 # do aide check
+- name: disable prelink
+  shell: sed -i 's/PRELINKING=yes/PRELINKING=no/g' /etc/sysconfig/prelink;/usr/sbin/prelink -ua
+  tags: prelink
+  ignore_errors: true
+
 - name: install aide
   yum: name=aide state=present
   tags: aide
