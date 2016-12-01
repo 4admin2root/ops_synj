@@ -187,7 +187,7 @@
   tags: av
 
 - name: fresh av
-  shell: freshclam
+  shell: nohup freshclam &
   tags: av
 
 - name: create av dir
