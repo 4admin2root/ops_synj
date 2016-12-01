@@ -2,6 +2,8 @@
 #########################################################################
 # tested on centos 7
 # 2016-11-19
+# created by : lvzhijun
+# others :
 ########################################################################
 #检查并进行安全更新
 - name: check and update security packages
@@ -79,6 +81,13 @@
 # firewall
 #- name: firewall
 #  firewalld: port=22/tcp permanent=true state=enabled
+#  psacct
+- name: psacct
+  yum: name=psacct state=present
+  tags: ps
+- name: psacct service 
+  service: name=psacct state=restarted enabled=yes
+  tags: ps
 # configure mailx
 - name: install mailx
   yum: name=mailx state=present
@@ -149,12 +158,54 @@
   yum: name=rkhunter state=present
   tags: rk
 
+- name: update rkhunter
+  shell: rkhunter --update ; rkhunter --propupd
+  tags: rk
+
+- name: rkhunter email
+  copy: src=rkhunter dest=/etc/sysconfig/rkhunter owner=root group=root mode=0640
+  tags: rk
+
+- name: cron rkhunter update
+  cron: name="rkhunter up" minute="30" hour="6" day="1" job="/bin/rkhunter --update"
+  tags: rk
+
+- name: cron rkhunter
+  cron: name="rkhunter" minute="0" hour="6" job="/bin/rkhunter --cronjob"
+  tags: rk
+
+
 - name: install clamav clamav-update
-  yum: name={{items}} state=present
+  yum: name={{item}} state=present
   with_items: 
         - clamav
         - clamav-update
-  tags: clamav
+  tags: av
+
+- name: config av
+  shell: sed -i -e "s/^Example/#Example/" /etc/freshclam.conf
+  tags: av
+
+- name: fresh av
+  shell: freshclam
+  tags: av
+
+- name: create av dir
+  file: path=/usr/local/av state=directory mode=0755
+  tags: av
+
+- name: copy av script
+  copy: src=clamscan.sh dest=/usr/local/av/clamscan.sh owner=root group=root mode=0700
+  tags: av
+
+- name: cron av update
+  cron: name="av up" minute="0" hour="4" day="2" job="/bin/freshclam"
+  tags: av
+
+
+- name: cron av
+  cron: name="av" minute="0" hour="4" job="/usr/local/av/clamscan.sh"
+  tags: av
 
 # do aide check
 - name: disable prelink
