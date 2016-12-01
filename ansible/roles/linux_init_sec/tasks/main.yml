@@ -26,6 +26,7 @@
 - name: copy auditd.conf
   template: src=auditd.conf dest=/etc/audit/auditd.conf owner=root group=root mode=0640
   notify: restart auditd
+  tags: audit
 # 密码策略
 - name: overwrite login.defs
   template: src=login.defs dest=/etc/login.defs owner=root group=root mode=0644
@@ -144,9 +145,17 @@
   tags: oscap
   ignore_errors: true
 #
-# something important:
-# 1.chkrootkit,rkhunter
-# 2.file hash value check: aide,tripwire
+- name: install rkhunter
+  yum: name=rkhunter state=present
+  tags: rk
+
+- name: install clamav clamav-update
+  yum: name={{items}} state=present
+  with_items: 
+        - clamav
+        - clamav-update
+  tags: clamav
+
 # do aide check
 - name: disable prelink
   shell: sed -i 's/PRELINKING=yes/PRELINKING=no/g' /etc/sysconfig/prelink;/usr/sbin/prelink -ua
@@ -159,7 +168,9 @@
 
 - name: copy aide conf
   template: src=aide.conf dest=/etc/aide.conf owner=root group=root mode=0600
-  tags: aide
+  tags: 
+        - aide
+        - aideconf
 
 - name: create aide dir
   file: path=/usr/local/aide state=directory mode=0755
@@ -175,7 +186,9 @@
   #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
 - name: init aide
   shell: aide -i;mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-  tags: aide
+  tags: 
+        - aide
+        - aideconf
   ignore_errors: true
 
 - name: upload result file to file server
