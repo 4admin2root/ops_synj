@@ -42,8 +42,8 @@
 - name: set account policy:password-auth
   copy: src=password-auth  dest=/etc/pam.d/password-auth owner=root group=root mode=0640
 # 修改root用户密码有效期为90天，禁止rootssh登录，密码修改由堡垒机触发,待定==========================
-- name: change  root password expires 
-  shell: chage -M 90 root
+#- name: change  root password expires 
+#  shell: chage -M 90 root
 
 # 限制用户root使用ssh
 #- name: change ssh config :PermitRootLogin no
@@ -150,7 +150,7 @@
   ignore_errors: true
 
 - name: upload result file to file server
-  shell: F=`hostname`_`date +%Y%m%d`.html;curl  -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
+  shell: F=`hostname`_`date +%Y%m%d`.html;curl -s -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
   tags: oscap
   ignore_errors: true
 #
@@ -189,10 +189,9 @@
   copy: src=clamscan.sh dest=/usr/local/av/clamscan.sh owner=root group=root mode=0700
   tags: av
 
-- name: cron av update
-  cron: name="av up" minute="0" hour="4" day="2" job="/bin/freshclam"
-  tags: av
-
+#- name: cron av update
+#  cron: name="av up" minute="0" hour="4" day="2" job="/bin/freshclam"
+#  tags: av
 
 - name: cron av
   cron: name="av" minute="0" hour="7" job="/usr/local/av/clamscan.sh"
