@@ -50,10 +50,10 @@
 #  shell: echo "PermitRootLogin no" >> /etc/ssh/sshd_config
 
 # 清除xzx用户密码 
-- name: check  user xzx with password and then delete password
-  shell: bash -c "[ `awk -F ':' '{print $1,$2}' /etc/shadow |grep xzx |wc -L` -gt 80 ] && passwd -d xzx"
-  when: ansible_os_family == "RedHat" #and ansible_distribution_major_version|int == 7
-  ignore_errors: true
+#- name: check  user xzx with password and then delete password
+#  shell: bash -c "[ `awk -F ':' '{print $1,$2}' /etc/shadow |grep xzx |wc -L` -gt 80 ] && passwd -d xzx"
+#  when: ansible_os_family == "RedHat" #and ansible_distribution_major_version|int == 7
+#  ignore_errors: true
 # 检查可登陆用户
 - name: check users which can login
   shell: grep -v nologin /etc/passwd |egrep '/bin/bash|/bin/sh|/bin/ksh' |awk -F ':' '{print $1}'
