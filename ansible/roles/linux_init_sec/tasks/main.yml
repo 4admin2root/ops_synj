@@ -162,18 +162,9 @@
   shell: rkhunter --update ; rkhunter --propupd
   tags: rk
 
-- name: copy rkhunter shell
-  copy: src=rkhunter.sh dest=/usr/sbin/rkhunter.sh owner=root group=root mode=0740
+- name: copy rkhunter config
+  copy: src=rkhunter dest=/etc/sysconfig/rkhunter owner=root group=root mode=0640
   tags: rk
-
-- name: cron rkhunter update
-  cron: name="rkhunter up" minute="30" hour="6" day="1" job="/bin/rkhunter --update"
-  tags: rk
-
-- name: cron rkhunter
-  cron: name="rkhunter" minute="0" hour="6" job="/usr/sbin/rkhunter.sh"
-  tags: rk
-
 
 - name: install clamav clamav-update
   yum: name={{item}} state=present
@@ -204,7 +195,7 @@
 
 
 - name: cron av
-  cron: name="av" minute="0" hour="4" job="/usr/local/av/clamscan.sh"
+  cron: name="av" minute="0" hour="7" job="/usr/local/av/clamscan.sh"
   tags: av
 
 # do aide check
@@ -232,7 +223,7 @@
   tags: aide
 
 - name: cron aide
-  cron: name="aide" minute="0" hour="5" job="/usr/local/aide/aide.sh"
+  cron: name="aide" minute="30" hour="7" job="/usr/local/aide/aide.sh"
   tags: aide
   #mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz; /sbin/aide -u > /var/lib/aide/`hostname`_`date +%Y%m%d`.log
 - name: init aide
