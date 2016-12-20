@@ -241,3 +241,6 @@
 - debug: msg="please browse the URL:{{url.stdout}} to get scan result"
   ignore_errors: true
   tags: url
+
+# set bash history size
+#
