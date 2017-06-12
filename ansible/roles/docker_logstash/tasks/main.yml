@@ -1,0 +1,17 @@
+---
+#########################################################################
+# tested on centos 7
+# 2017-06-12
+# created by : lvzhijun
+# task info : pull logstash and run it
+########################################################################
+# base on docker_init
+- name: install python-pip
+  yum: name=python-pip state=present
+
+- name: install docker-py
+  pip: name=docker-py
+
+- name: pull logstash
+  docker_image:
+    name: logstash:alpine
