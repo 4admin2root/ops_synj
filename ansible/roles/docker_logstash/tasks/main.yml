@@ -16,6 +16,9 @@
   docker_image:
     name: logstash:alpine
 
+- name: mkdir
+  file: path=/root/docker_logstash/ owner=root group=root mode=0755 state=directory
+
 - name: copy logstash conf file
   template: src=nginx_access.conf dest=/root/docker_logstash/ owner=root group=root mode=0600
 
