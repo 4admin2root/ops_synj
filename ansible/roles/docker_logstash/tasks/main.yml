@@ -15,3 +15,15 @@
 - name: pull logstash
   docker_image:
     name: logstash:alpine
+
+- name: copy logstash conf file
+  template: src=nginx_access.conf dest=/root/docker_logstash/ owner=root group=root mode=0600
+
+- name: docker run logstash
+  docker:
+    name: logstash
+    image: logstash:alpine
+    state: present
+    command:  -f /root/docker_logstash
+    volumes:
+       - /root/docker_logstash

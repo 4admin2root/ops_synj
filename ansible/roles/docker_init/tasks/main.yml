@@ -3,7 +3,7 @@
 # tested on centos 7
 # 2017-06-12
 # created by : lvzhijun
-# others : init docker and pull logstash image
+# others : init docker
 # 1.install docker
 # 2.add aliyun mirror
 ########################################################################
