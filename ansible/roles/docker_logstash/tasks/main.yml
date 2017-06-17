@@ -6,6 +6,9 @@
 # task info : pull logstash and run it
 ########################################################################
 # base on docker_init
+- name: useradd
+  user: name=logstash
+
 - name: install python-pip
   yum: name=python-pip state=present
 
@@ -17,16 +20,17 @@
     name: logstash:alpine
 
 - name: mkdir
-  file: path=/root/docker_logstash/ owner=root group=root mode=0755 state=directory
+  file: path={{ elk_conf_path }} owner=logstash group=logstash mode=0755 state=directory
 
 - name: copy logstash conf file
-  template: src=nginx_access.conf dest=/root/docker_logstash/ owner=root group=root mode=0600
+  template: src=nginx_access.conf dest={{ elk_conf_path }} owner=logstash group=logstash mode=0644
 
 - name: docker run logstash
-  docker:
+  docker_container:
     name: logstash
     image: logstash:alpine
-    state: present
-    command:  -f /root/docker_logstash
+    state: started
+    command:  -f {{ elk_conf_path }}
     volumes:
-       - /root/docker_logstash
+       - "{{ elk_conf_path }}:{{ elk_conf_path }}"
+       - "{{ elk_nginx_log_path }}:{{ elk_nginx_log_path }}"
