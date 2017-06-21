@@ -1,0 +1,23 @@
+---
+#########################################################################
+# tested on centos 7
+# 2017-06-60
+# created by : lvzhijun
+# 1.init k8s cluster
+########################################################################
+#you can make repo by yourself , pls follow http://www.jianshu.com/p/8ce11f947410 , step 1
+- name: config repo
+  template: src=k8s.repo dest=/etc/yum.repos.d/k8s.repo owner=root group=root mode=0640
+# install kubeadm in all hosts
+- name: install docker engine
+  yum: name=kubeadm-{{ k8s_version }} state=present
+
+- name: install python-pip
+  yum: name=python-pip state=present
+
+- name: install docker-py
+  pip: name=docker-py
+
+- name: docker pull quay.io/coreos/hyperkube
+  docker_image:
+    name: quay.io/coreos/hyperkube:v{{ k8s_version }}_coreos.0
