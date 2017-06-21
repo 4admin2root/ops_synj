@@ -1,8 +1,24 @@
-[k8s]
-10.9.5.64
-10.9.5.65
+[node]
 10.9.5.69
 10.9.5.75
 10.9.5.83
+[slave]
+10.9.5.64
+10.9.5.65
+[commander]
 10.9.5.89
+
+[etcd]
+10.9.5.64
+10.9.5.65
+10.9.5.89
+
+
+[master:children]
+slave
+commander
+
+[k8s:children]
+node
+master
 

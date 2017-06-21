@@ -18,6 +18,20 @@
 - name: install docker-py
   pip: name=docker-py
 
+- name: docker pull etcd
+  docker_image:
+    name: "docker.io/4admin2root/etcd-amd64:3.0.17"
+  when: inventory_hostname in groups["etcd"]
+
 - name: docker pull quay.io/coreos/hyperkube
   docker_image:
-    name: quay.io/coreos/hyperkube:v{{ k8s_version }}_coreos.0
+    #name: "4admin2root/hyperkube:v{{ k8s_version }}_coreos.0"
+    name: "reg-i.xzxpay.com/coreos/hyperkube:v{{ k8s_version }}_coreos.0"
+  when: inventory_hostname in groups["master"]
+
+# todo
+# init etcd cluster
+# reconfig kubelet.service : pod-infra-container-image
+# reconfig /etc/systemd/system/kubelet.service.d/10-kubeadm.conf : from systemd to cgroupfs
+# run kubeadm in commander
+#
