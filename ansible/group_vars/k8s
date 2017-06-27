@@ -1,4 +1,0 @@
-k8s_version: 1.6.4
-KUBE_REPO_PREFIX: docker.io/4admin2root
-KUBE_HYPERKUBE_IMAGE: "4admin2root/hyperkube:v1.6.4_coreos.0"
-KUBE_ETCD_IMAGE: "4admin2root/etcd-amd64:3.0.17"

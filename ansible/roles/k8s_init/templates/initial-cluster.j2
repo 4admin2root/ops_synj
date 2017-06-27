@@ -1,0 +1,3 @@
+initial_cluster: "{% for host in groups['etcd'] -%}
+{{ hostvars[host]['etcd_name'] }}=http://{{ hostvars[host]['inventory_hostname'] }}:2380,
+{%- endfor %}"
