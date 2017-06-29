@@ -14,6 +14,9 @@ links:
 :copyright: 
 :license: BSD 3-Clause License
 """
+import shutil
+import requests
+import  datetime
 
 __title__ = 'main'
 __version__ = '0.0.1'
@@ -21,7 +24,6 @@ __author__ = 'adminroot'
 __license__ = 'BSD 3-Clause License'
 
 
-import  requests
 
 
 def get_hosts():
@@ -36,8 +38,9 @@ def get_hosts():
 
 
 if __name__ == '__main__':
+    """ copy old hosts file and create new one"""
+    shutil.copyfile('C:\Windows\System32\drivers\etc\hosts', 'C:\hosts'+datetime.datetime.now().strftime('%Y-%m-%d'))
     f = open('C:\Windows\System32\drivers\etc\hosts', 'w')
-    #f = open('D:\hosts', 'w')
     hosts_con = get_hosts()
     if hosts_con:
         f.write(hosts_con)
