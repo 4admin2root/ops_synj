@@ -33,6 +33,7 @@
 
 - name: generate initial-cluster
   local_action: template src=initial-cluster.j2 dest=/tmp  mode=0644
+  when: inventory_hostname in groups["etcd"]
 
 - name: load initial-cluster
   include_vars:
@@ -67,18 +68,42 @@
   sysctl: name="net.bridge.bridge-nf-call-iptables" value=1 sysctl_set=yes state=present reload=yes
 
 - name: enable services
-  service: name={{ item}} state=restarted enabled=yes
+  service: name={{ item }} state=restarted enabled=yes
   with_items:
         - kubelet
         - docker
 
 # run kubeadm in commander
 - name: run kubeadm
-  shell: KUBE_ETCD_IMAGE={{ KUBE_ETCD_IMAGE }} KUBE_REPO_PREFIX={{ KUBE_REPO_PREFIX }} KUBE_HYPERKUBE_IMAGE={{ KUBE_HYPERKUBE_IMAGE }} kubeadm init --apiserver-advertise-address=10.9.5.243 --token {{ kubeadm_token }}
-  register: out
+  shell: KUBE_ETCD_IMAGE={{ KUBE_ETCD_IMAGE }} KUBE_REPO_PREFIX={{ KUBE_REPO_PREFIX }} KUBE_HYPERKUBE_IMAGE={{ KUBE_HYPERKUBE_IMAGE }} kubeadm init  --token {{ kubeadm_token }}
+  when: inventory_hostname in groups["commander"]  and  network_provider  != 'flannel'
+
+- name: run kubeadm with flannel
+  shell: KUBE_ETCD_IMAGE={{ KUBE_ETCD_IMAGE }} KUBE_REPO_PREFIX={{ KUBE_REPO_PREFIX }} KUBE_HYPERKUBE_IMAGE={{ KUBE_HYPERKUBE_IMAGE }} kubeadm init  --token {{ kubeadm_token }} --pod-network-cidr={{ flannel_network_cidr }}
+  when: inventory_hostname in groups["commander"]  and  network_provider  == 'flannel'
+
+- name: kubeadm copy admin.conf
+  shell: cp /etc/kubernetes/admin.conf $HOME/ && chown $(id -u):$(id -g) $HOME/admin.conf && export KUBECONFIG=$HOME/admin.conf && echo 'export KUBECONFIG=$HOME/admin.conf' >> $HOME/.bash_profile
   when: inventory_hostname in groups["commander"]
 
+- name: k8s_init mkdir
+  file: path={{ k8s_temp_dir }} state=directory mode=755
+  when: inventory_hostname in groups["commander"]
 
+- name: copy flannel config file
+  template: src={{ item }} dest={{ k8s_temp_dir }} owner=root group=root mode=0640
+  with_items:
+       - kube-flannel-rbac.yml
+       - kube-flannel.yml
+  when: inventory_hostname in groups["commander"]  and  network_provider  == 'flannel'
+
+- name: kubectl create flannel
+  shell: source $HOME/.bash_profile && kubectl create -f {{ k8s_temp_dir }}/kube-flannel-rbac.yml && sleep 3 && kubectl create -f {{ k8s_temp_dir }}/kube-flannel.yml
+  when: inventory_hostname in groups["commander"]  and  network_provider  == 'flannel'
+       
+- name: kubeadm join
+  shell: kubeadm join --token 1732e8.da2263dfad7b89b2 {{ groups['commander'][0] }}:6443
+  when:  inventory_hostname not in groups["commander"]
 #todo
 #[root@cloud4ourself-k8sprod5 ~]# cp /etc/kubernetes/admin.conf $HOME/
 #[root@cloud4ourself-k8sprod5 ~]# chown $(id -u):$(id -g) $HOME/admin.conf
@@ -91,3 +116,4 @@
 #
 # flannel.yml  must be with flannel-racl.yml  and kubeadm init  --pod-network-cidr=
 #kubeadm join --token 1732e8.da2263dfad7b89b2 10.9.5.65:6443
+# changed single etcd to cluster etcd

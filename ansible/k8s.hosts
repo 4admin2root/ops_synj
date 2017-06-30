@@ -9,9 +9,9 @@
 10.9.5.65 k8s_api_vip=10.9.5.24x
 
 [etcd]
-10.9.5.64 etcd_name=k8s_etcd2 etcd_port=2379
-10.9.5.65 etcd_name=k8s_etcd3 etcd_port=2379
-10.9.5.89 etcd_name=k8s_etcd1 etcd_port=2379
+10.9.5.64 etcd_name=k8s_etcd2 etcd_port=2369
+10.9.5.65 etcd_name=k8s_etcd3 etcd_port=2369
+10.9.5.89 etcd_name=k8s_etcd1 etcd_port=2369
 
 
 [master:children]
