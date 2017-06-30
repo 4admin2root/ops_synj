@@ -1,12 +1,11 @@
 k8s_version: 1.6.4
 KUBE_REPO_PREFIX: docker.io/4admin2root
 KUBE_HYPERKUBE_IMAGE: "4admin2root/hyperkube:v1.6.4_coreos.0"
-KUBE_PAUSE_IMAGE: "reg-i.xzxpay.com/google_containers/pause-amd64:3.0"
+KUBE_PAUSE_IMAGE: "4admin2root/pause-amd64:3.0"
 kubeadm_token: 1732e8.da2263dfad7b89b2
 KUBE_ETCD_IMAGE: "4admin2root/etcd-amd64:3.0.17"
 cgroup_driver: cgroupfs
 etcd_docker_url: "4admin2root/etcd-amd64:3.0.17"
 etcd_data_dir: /opt/etcd
-hyperkube_docker_url: "reg-i.xzxpay.com/coreos/hyperkube:v{{ k8s_version }}_coreos.0"
-#hyperkube_docker_url: "4admin2root/hyperkube:v{{ k8s_version }}_coreos.0"
-network_provider: flannel  #todo:calico.yml
+hyperkube_docker_url: "4admin2root/hyperkube:v{{ k8s_version }}_coreos.0"
+network_provider: flannel  #todo:calico.yml , weave
