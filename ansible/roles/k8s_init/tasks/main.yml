@@ -52,9 +52,42 @@
   when: inventory_hostname in groups["etcd"]
 
 
-# todo
-# init etcd cluster
-# reconfig kubelet.service : pod-infra-container-image
-# reconfig /etc/systemd/system/kubelet.service.d/10-kubeadm.conf : from systemd to cgroupfs
+- name: change kubelet.service add pod-infra-container-image
+  template: src=kubelet.service dest=/etc/systemd/system/kubelet.service mode=0755
+
+- name: change kubeadm.conf cgroup-driver
+  template: src=10-kubeadm.conf dest=/etc/systemd/system/kubelet.service.d/10-kubeadm.conf mode=0755
+
+- name: systemd reload
+  systemd:
+     daemon_reload: yes
+     name: kubelet
+      
+- name: sysctl 
+  sysctl: name="net.bridge.bridge-nf-call-iptables" value=1 sysctl_set=yes state=present reload=yes
+
+- name: enable services
+  service: name={{ item}} state=restarted enabled=yes
+  with_items:
+        - kubelet
+        - docker
+
 # run kubeadm in commander
+- name: run kubeadm
+  shell: KUBE_ETCD_IMAGE={{ KUBE_ETCD_IMAGE }} KUBE_REPO_PREFIX={{ KUBE_REPO_PREFIX }} KUBE_HYPERKUBE_IMAGE={{ KUBE_HYPERKUBE_IMAGE }} kubeadm init --apiserver-advertise-address=10.9.5.243 --token {{ kubeadm_token }}
+  register: out
+  when: inventory_hostname in groups["commander"]
+
+
+#todo
+#[root@cloud4ourself-k8sprod5 ~]# cp /etc/kubernetes/admin.conf $HOME/
+#[root@cloud4ourself-k8sprod5 ~]# chown $(id -u):$(id -g) $HOME/admin.conf
+#[root@cloud4ourself-k8sprod5 ~]# export KUBECONFIG=$HOME/admin.conf
+#[root@cloud4ourself-k8sprod5 ~]# kubectl get nodes
+#NAME                               STATUS     AGE       VERSION
+#cloud4ourself-k8sprod5.novalocal   NotReady   3m        v1.6.4
+#Run \"kubectl apply -f [podnetwork].yaml
+# flannel.yml  racl
 #
+# flannel.yml  must be with flannel-racl.yml  and kubeadm init  --pod-network-cidr=
+#kubeadm join --token 1732e8.da2263dfad7b89b2 10.9.5.65:6443

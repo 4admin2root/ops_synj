@@ -4,9 +4,9 @@
 10.9.5.83
 [slave]
 10.9.5.64
-10.9.5.65
-[commander]
 10.9.5.89
+[commander]
+10.9.5.65 k8s_api_vip=10.9.5.24x
 
 [etcd]
 10.9.5.64 etcd_name=k8s_etcd2 etcd_port=2379
