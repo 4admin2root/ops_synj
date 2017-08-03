@@ -3,6 +3,8 @@
 import urllib,urllib2
 import json
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 def gettoken():
     CropID='wwd'
     Secret='xxx'
