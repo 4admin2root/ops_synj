@@ -1,0 +1,29 @@
+---
+- name: Install copy libaio pkg
+  yum: name=libaio state=present
+
+- name: install mysql
+  yum: name=http://mirrors-i.xzxpay.com:8080/ansible/{{ item }} state=present
+  with_items:
+    - mysql-community-common-5.7.13-1.el7.x86_64.rpm
+    - mysql-community-libs-5.7.13-1.el7.x86_64.rpm
+    - mysql-community-client-5.7.13-1.el7.x86_64.rpm
+    - mysql-community-server-5.7.13-1.el7.x86_64.rpm
+    - mysql-community-libs-compat-5.7.13-1.el7.x86_64.rpm
+
+- name: make /opt/xzx/
+  file: path=/opt/xzx/log/mysql owner=root group=root mode=0755 state=directory
+
+- name: Calculate InnoDB buffer pool size
+  set_fact:
+    innodb_buffer_pool_size: "{{ ansible_memtotal_mb //10 *8 }}"
+
+- name: copy my.cnf
+  template: src=my.cnf.j2 dest=/etc/my.cnf owner=root group=root mode=0644       
+
+- name: start mysql
+  service: name=mysqld state=started
+
+- name: change my.cnf
+  script: change_mysql_passwd.sh
+  notify: restart mysqld
