@@ -1,0 +1,3 @@
+- name: start mongod
+  service: name=mongod state=started enabled=true
+

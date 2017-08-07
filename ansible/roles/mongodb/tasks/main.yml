@@ -1,0 +1,46 @@
+---
+- name: install mongodb
+  sudo: true
+  yum: name=http://mirrors-i.xzxpay.com:8080/ansible/{{item}} state=present
+  with_items:
+    - mongodb-org-mongos-3.2.8-1.el7.x86_64.rpm
+    - mongodb-org-shell-3.2.8-1.el7.x86_64.rpm
+    - mongodb-org-tools-3.2.8-1.el7.x86_64.rpm
+    - mongodb-org-server-3.2.8-1.el7.x86_64.rpm
+    - mongodb-org-3.2.8-1.el7.x86_64.rpm
+
+- name: set sysctl
+  sysctl: name="net.ipv4.ip_forward" value=1 sysctl_set=yes state=present reload=yes
+
+- name: create date dir
+  file: path=/opt/xzx/data/mongodb
+        owner=xzx group=xzx mode=0755 state=directory
+
+- name: create log dir
+  file: path=/opt/xzx/log/mongodb
+        owner=xzx group=xzx mode=0755 state=directory
+
+- name: copy mongod.conf
+  template: src=mongod.conf dest=/opt/xzx/data/mongod.conf owner=xzx group=xzx mode=0644
+
+- name: change mongod
+  sudo: true
+  copy: src=mongod dest=/etc/init.d/mongod force=yes owner=root group=root mode=0755
+
+
+- name: change mode
+  sudo: true
+  file: path=/opt/xzx mode=0755
+
+- name: change xzx.xzx /run/mongodb
+  sudo: true
+  file: path=/run/mongodb owner=xzx group=xzx 
+
+- name: chown mongodb
+  sudo: true
+  file: path=/opt/xzx/data/mongodb owner=xzx group=xzx mode=0755 state=directory
+
+- name: systemctl reload
+  sudo: true
+  command: systemctl daemon-reload
+  notify: start mongod
