@@ -1,0 +1,40 @@
+---
+- name: Install jdk
+  yum: name=http://mirrors-i.xzxpay.com:8080/ansible/jdk-7u80-linux-x64.rpm state=present
+
+- name: make /opt/xzx/app
+  file: path=/opt/xzx/app state=directory mode=0755 owner=xzx group=xzx
+
+- name: install apache-tomcat-7.0.70.tar.gz
+  unarchive: src=http://mirrors-i.xzxpay.com:8080/ansible/apache-tomcat-7.0.70.tar.gz dest=/opt/xzx/app/ owner=xzx group=xzx mode=0755 copy=no
+
+- name: renanme 
+  command: mv apache-tomcat-7.0.70 apache-tomcat
+  args:
+    chdir: /opt/xzx/app/
+
+- name: chown xzx
+  file: path=/opt/xzx/app/apache-tomcat owner=xzx group=xzx state=directory
+
+- name: del apache-tomcat  jdk
+  file: path={{item}} state=absent 
+  with_items:
+        - /root/jdk-7u80-linux-x64.rpm 
+
+- name: add systemctl start tomcat
+  template: src=tomcat.service dest=/usr/lib/systemd/system/ owner=root group=root mode=644
+
+- name: daemon-reload
+  command: systemctl daemon-reload
+
+- name: del tomcat manager
+  file: path=/opt/xzx/app/apache-tomcat/webapps/{{ item }} state=absent
+  with_items:
+    - docs
+    - examples
+    - host-manager
+    - manager
+
+- name: change index.jsp
+  template: src=index.jsp dest=/opt/xzx/app/apache-tomcat/webapps/ROOT/ owner=xzx group=xzx mode=0644
+  notify: start tomcat
