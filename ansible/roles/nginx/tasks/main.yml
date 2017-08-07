@@ -1,0 +1,19 @@
+---
+- name: Add nginx repository
+  yum_repository:
+    name: nginx
+    description: NGINX YUM repo
+    baseurl: http://nginx.org/packages/centos/$releasever/$basearch/
+    gpgcheck: no
+
+- name: Install nginx 
+  yum: name=nginx-1.12.1 state=present
+
+- name: Get nginx.conf
+  template: src=nginx.conf dest=/etc/nginx/ owner=root group=root mode=0644
+  notify: start nginx
+
+- name: Get conf.d conf
+  template: src=upstream.conf dest=/etc/nginx/conf.d/ owner=root group=root mode=0644
+  notify: start nginx
+
