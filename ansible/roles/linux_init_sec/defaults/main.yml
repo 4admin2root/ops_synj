@@ -1,0 +1,11 @@
+---
+smtp_auth_user: 'alert@yyy.com'
+smtp_auth_password: 'mypassword'
+smtp_send_to: 'ops@yyy.com'
+lynis_version: '2.6.8'
+
+# s3
+s3_bucket: security
+s3_url: "http://192.20.17.71:9000"
+s3_access_key: minio
+s3_secret_key: minio
