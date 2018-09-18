@@ -5,5 +5,5 @@ LOG=`hostname`_`date +%Y%m%d`.log
 grep okay /var/lib/aide/$LOG
 if [ $? -ne 0 ]
 then
-cat /var/lib/aide/$LOG | mail -s `hostname`_aide_result ops@synjones.net
+cat /var/lib/aide/$LOG | mail -s `hostname`_aide_result {{ smtp_send_to }}
 fi

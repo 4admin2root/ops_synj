@@ -1,0 +1,2 @@
+MAILTO={{ smtp_send_to }}
+DIAG_SCAN=no

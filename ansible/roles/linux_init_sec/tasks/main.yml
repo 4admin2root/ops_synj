@@ -11,6 +11,10 @@
 #检查audit软件包
 - name: check audit package
   yum: name=audit state=present
+# for s3
+- name: check boto3 
+  yum: name=python-boto3 state=present
+  tags: s3
 
 - name: check audispd-plugins package
   yum: name=audispd-plugins state=present
@@ -115,7 +119,7 @@
 - name: install  lynis
   yum: name={{item}} state=present
   with_items:
-        - lynis-2.3.2
+        - lynis-{{ lynis_version }}
         - yum-utils
         - arpwatch
   tags: lynis
@@ -151,8 +155,24 @@
   ignore_errors: true
 
 - name: upload result file to file server
-  shell: F=`hostname`_`date +%Y%m%d`.html;curl -s -F "file=@/tmp/$F"   http://10.9.100.3/uploadfile?dir="/init_sec/" 
-  tags: oscap
+  shell: date +%Y%m%d
+  register: yyymmdd
+  tags: s3
+  # "ansible_hostname"
+
+- name: upload result file to file server
+  aws_s3:
+    bucket: '{{ s3_bucket }}'
+    object: '{{ ansible_hostname }}_{{ yyymmdd.stdout }}.html'
+    src: '/tmp/{{ ansible_hostname }}_{{ yyymmdd.stdout }}.html'
+    mode: put
+    rgw: true
+    s3_url: '{{ s3_url }}'
+    aws_access_key: '{{ s3_access_key }}'
+    aws_secret_key: '{{ s3_secret_key }}'
+  tags: 
+      - s3
+      - oscap
   ignore_errors: true
 #
 - name: install rkhunter
@@ -164,7 +184,7 @@
   tags: rk
 
 - name: copy rkhunter config
-  copy: src=rkhunter dest=/etc/sysconfig/rkhunter owner=root group=root mode=0640
+  template: src=rkhunter dest=/etc/sysconfig/rkhunter owner=root group=root mode=0640
   tags: rk
 
 - name: install clamav clamav-update
@@ -187,7 +207,7 @@
   tags: av
 
 - name: copy av script
-  copy: src=clamscan.sh dest=/usr/local/av/clamscan.sh owner=root group=root mode=0700
+  template: src=clamscan.sh dest=/usr/local/av/clamscan.sh owner=root group=root mode=0700
   tags: av
 
 #- name: cron av update
@@ -219,7 +239,7 @@
   tags: aide
 
 - name: copy aide script 
-  copy: src=aide.sh dest=/usr/local/aide/aide.sh owner=root group=root mode=0700
+  template: src=aide.sh dest=/usr/local/aide/aide.sh owner=root group=root mode=0700
   tags: aide
 
 - name: cron aide
@@ -233,14 +253,9 @@
         - aideconf
   ignore_errors: true
 
-- name: upload result file to file server
-  shell: echo http://10.9.100.3/upload/init_sec/`hostname`_`date +%Y%m%d`.html
-  register: url
+- debug: msg="please browse the URL:{{ s3_url }}/minio/{{ s3_bucket }}/ to get scan result"
   ignore_errors: true
-  tags: url
-- debug: msg="please browse the URL:{{url.stdout}} to get scan result"
-  ignore_errors: true
-  tags: url
+  tags: s3
 
 # set bash history size
 #
