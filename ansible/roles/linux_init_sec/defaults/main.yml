@@ -1,4 +1,5 @@
 ---
+smtp_addr: 'mail.yyy.com'
 smtp_auth_user: 'alert@yyy.com'
 smtp_auth_password: 'mypassword'
 smtp_send_to: 'ops@yyy.com'

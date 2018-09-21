@@ -18,7 +18,7 @@ ignore mime-version content-transfer-encoding
 fwdretain subject date from to
 set bsdcompat
 set from="{{ smtp_auth_user }}"
-set smtp=smtps://smtp.exmail.qq.com:465
+set smtp={{ smtp_addr }}
 set smtp-auth-user={{ smtp_auth_user }}
 set smtp-auth-password={{ smtp_auth_password }}
 set smtp-auth=login
